@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "sax",
+  "version": "${version}",
+  "name": "Simple Anti X-Ray",
+  "description": "A simple anti X-Ray mod for Fabric",
+  "authors": [
+    "Haven King"
+  ],
+  "license": "CC0-1.0",
+  "icon": "assets/sax/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "dev.hephaestus.sax.SAX"
+    ]
+  },
+  "mixins": [
+    "sax.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.8.9+build.203",
+    "fabric": "*",
+    "minecraft": "1.16.1"
+  }
+}
