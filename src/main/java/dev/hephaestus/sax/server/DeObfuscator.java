@@ -1,6 +1,6 @@
 package dev.hephaestus.sax.server;
 
-import dev.hephaestus.sax.world.OreCountRegistry;
+import dev.hephaestus.sax.SAX;
 import net.minecraft.block.BlockState;
 import net.minecraft.network.packet.s2c.play.BlockUpdateS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -38,14 +38,16 @@ public class DeObfuscator {
         this.revealed.removeIf(pos -> !pos.isWithinDistance(origin, SEARCH_RADIUS));
         BlockPos.Mutable mutable = new BlockPos.Mutable();
 
+        int i = 0;
         for (byte x = -SEARCH_RADIUS; x <= SEARCH_RADIUS; ++x) {
             for (byte y = -SEARCH_RADIUS; y <= SEARCH_RADIUS; ++y) {
                 for (byte z = -SEARCH_RADIUS; z <= SEARCH_RADIUS; ++z) {
                     if (x * x + y * y + z * z <= SEARCH_RADIUS * SEARCH_RADIUS) {
+                        ++i;
                         mutable.set(origin.x, origin.y, origin.z);
                         mutable.move(x, y, z);
 
-                        if (OreCountRegistry.isTracked(this.player.world.getBlockState(mutable).getBlock())) {
+                        if (Config.HIDDEN.containsKey(this.player.world.getBlockState(mutable).getBlock())) {
                             Vec3i pos = mutable.toImmutable();
 
                             if (!this.revealed.contains(pos)) {
@@ -68,8 +70,6 @@ public class DeObfuscator {
     }
 
     private boolean traceForBlock(ServerPlayerEntity player, Vec3i target) {
-        boolean result = false;
-
         for (byte dX = 0; dX <= 1; ++dX) {
             for (byte dY = 0; dY <= 1; ++dY) {
                 for (byte dZ = 0; dZ <= 1; ++dZ) {
@@ -81,12 +81,15 @@ public class DeObfuscator {
                         );
 
                         BlockHitResult hitResult = rayTrace(context);
-                        result |= hitResult.getPos().isInRange(pos, 1.1F);
+
+                        if (hitResult.getPos().isInRange(pos, 0.5F)) {
+                            return true;
+                        }
                 }
             }
         }
 
-        return result;
+        return false;
     }
 
     private BlockHitResult rayTrace(RayTraceContext context) {

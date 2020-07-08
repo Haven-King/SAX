@@ -11,6 +11,10 @@ version = project.mod_version
 group = project.maven_group
 
 repositories {
+    mavenLocal()
+    maven {
+        url = "https://www.cursemaven.com"
+    }
     maven {
         url  "https://dl.bintray.com/ladysnake/libs"
     }
@@ -33,7 +37,11 @@ dependencies {
     modImplementation "dev.hephaestus:FibLib:${project.fiblib_version}"
     include "dev.hephaestus:FibLib:${project.fiblib_version}"
 
-    modCompile "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    modRuntime "curse.maven:phosphor:2987621"
+    modRuntime "curse.maven:lithium:2996131"
+
+
+//    modCompile "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 }
 
 processResources {

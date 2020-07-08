@@ -3,11 +3,7 @@
   "package": "dev.hephaestus.sax.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "server.DeObfuscateTargetedBlock",
-    "server.RemindOperatorsAboutBans",
-    "server.TrackBlockBreak",
-    "server.TrackBlockPlace",
-    "world.OreCountCapture"
+    "server.DeObfuscateTargetedBlock"
   ],
   "client": [
   ],

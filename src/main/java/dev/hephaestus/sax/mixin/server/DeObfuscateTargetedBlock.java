@@ -2,6 +2,7 @@ package dev.hephaestus.sax.mixin.server;
 
 import com.mojang.authlib.GameProfile;
 import dev.hephaestus.sax.server.DeObfuscator;
+import dev.hephaestus.sax.server.DeObfuscatorProvider;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.network.ServerPlayerInteractionManager;
@@ -13,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(ServerPlayerEntity.class)
-public abstract class DeObfuscateTargetedBlock {
+public class DeObfuscateTargetedBlock implements DeObfuscatorProvider {
     @Unique private DeObfuscator deObfuscator;
 
     @Inject(method = "<init>", at = @At("TAIL"))
@@ -24,5 +25,10 @@ public abstract class DeObfuscateTargetedBlock {
     @Inject(method = "playerTick", at = @At("TAIL"))
     private void tickDeObfuscator(CallbackInfo ci) {
         this.deObfuscator.tick();
+    }
+
+    @Override
+    public DeObfuscator get() {
+        return this.deObfuscator;
     }
 }
