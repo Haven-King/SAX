@@ -1,6 +1,5 @@
 package dev.hephaestus.sax.server;
 
-import dev.hephaestus.sax.SAX;
 import net.minecraft.block.BlockState;
 import net.minecraft.network.packet.s2c.play.BlockUpdateS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -11,7 +10,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.BlockView;
-import net.minecraft.world.RayTraceContext;
+import net.minecraft.world.RaycastContext;
 
 import java.util.HashSet;
 import java.util.function.Consumer;
@@ -74,10 +73,10 @@ public class DeObfuscator {
             for (byte dY = 0; dY <= 1; ++dY) {
                 for (byte dZ = 0; dZ <= 1; ++dZ) {
                     Vec3d pos = new Vec3d(target.getX() + dX, target.getY() + dY, target.getZ() + dZ);
-                        RayTraceContext context = new RayTraceContext(
+                        RaycastContext context = new RaycastContext(
                                 player.getCameraPosVec(1F),
                                 pos,
-                                RayTraceContext.ShapeType.VISUAL, RayTraceContext.FluidHandling.NONE, player
+                                RaycastContext.ShapeType.VISUAL, RaycastContext.FluidHandling.NONE, player
                         );
 
                         BlockHitResult hitResult = rayTrace(context);
@@ -92,14 +91,14 @@ public class DeObfuscator {
         return false;
     }
 
-    private BlockHitResult rayTrace(RayTraceContext context) {
+    private BlockHitResult rayTrace(RaycastContext context) {
         BlockView blockView = this.player.world;
-        return BlockView.rayTrace(context, (rayTraceContext, blockPos) -> {
+        return BlockView.raycast(context, (rayTraceContext, blockPos) -> {
             BlockState blockState = blockView.getBlockState(blockPos);
             Vec3d vec3d = rayTraceContext.getStart();
             Vec3d vec3d2 = rayTraceContext.getEnd();
             VoxelShape voxelShape = rayTraceContext.getBlockShape(blockState, blockView, blockPos);
-            return blockView.rayTraceBlock(vec3d, vec3d2, blockPos, voxelShape, blockState);
+            return blockView.raycastBlock(vec3d, vec3d2, blockPos, voxelShape, blockState);
         }, (rayTraceContext) -> {
             Vec3d vec3d = rayTraceContext.getStart().subtract(rayTraceContext.getEnd());
             return BlockHitResult.createMissed(rayTraceContext.getEnd(), Direction.getFacing(vec3d.x, vec3d.y, vec3d.z), new BlockPos(rayTraceContext.getEnd()));
