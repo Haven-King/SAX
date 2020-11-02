@@ -20,45 +20,52 @@ public class DeObfuscator {
 
     private final ServerPlayerEntity player;
     private final HashSet<Vec3i> revealed = new HashSet<>();
+    private final BlockPos.Mutable mutable = new BlockPos.Mutable();
+
+    private Thread thread = null;
 
     public DeObfuscator(ServerPlayerEntity player) {
         this.player = player;
     }
 
     public void tick() {
-        Vec3d origin = this.player.getCameraPosVec(1F);
+        if (thread == null || !thread.isAlive()) {
+            thread = new Thread(() -> {
+                Vec3d origin = this.player.getCameraPosVec(1F);
 
-        for (Vec3i pos : this.revealed) {
-            if (!pos.isWithinDistance(origin, SEARCH_RADIUS)) {
-                this.sendBlockUpdate(new BlockPos(pos), this.player.networkHandler::sendPacket);
-            }
-        }
+                for (Vec3i pos : this.revealed) {
+                    if (!pos.isWithinDistance(origin, SEARCH_RADIUS)) {
+                        this.sendBlockUpdate(new BlockPos(pos), this.player.networkHandler::sendPacket);
+                    }
+                }
 
-        this.revealed.removeIf(pos -> !pos.isWithinDistance(origin, SEARCH_RADIUS));
-        BlockPos.Mutable mutable = new BlockPos.Mutable();
+                this.revealed.removeIf(pos -> !pos.isWithinDistance(origin, SEARCH_RADIUS));
 
-        int i = 0;
-        for (byte x = -SEARCH_RADIUS; x <= SEARCH_RADIUS; ++x) {
-            for (byte y = -SEARCH_RADIUS; y <= SEARCH_RADIUS; ++y) {
-                for (byte z = -SEARCH_RADIUS; z <= SEARCH_RADIUS; ++z) {
-                    if (x * x + y * y + z * z <= SEARCH_RADIUS * SEARCH_RADIUS) {
-                        ++i;
-                        mutable.set(origin.x, origin.y, origin.z);
-                        mutable.move(x, y, z);
+                for (byte x = -SEARCH_RADIUS; x <= SEARCH_RADIUS; ++x) {
+                    for (byte y = -SEARCH_RADIUS; y <= SEARCH_RADIUS; ++y) {
+                        for (byte z = -SEARCH_RADIUS; z <= SEARCH_RADIUS; ++z) {
+                            if (x * x + y * y + z * z <= SEARCH_RADIUS * SEARCH_RADIUS) {
+                                mutable.set(origin.x, origin.y, origin.z);
+                                mutable.move(x, y, z);
 
-                        if (Config.HIDDEN.containsKey(this.player.world.getBlockState(mutable).getBlock())) {
-                            Vec3i pos = mutable.toImmutable();
+                                if (Config.HIDDEN.containsKey(this.player.world.getBlockState(mutable).getBlock())) {
+                                    Vec3i pos = mutable.toImmutable();
 
-                            if (!this.revealed.contains(pos)) {
-                                if (this.traceForBlock(this.player, pos)) {
-                                    this.revealed.add(pos);
-                                    this.sendBlockUpdate(new BlockPos(pos), this.player.networkHandler.connection::send);
+                                    if (!this.revealed.contains(pos)) {
+                                        if (this.traceForBlock(this.player, pos)) {
+                                            this.revealed.add(pos);
+                                            this.sendBlockUpdate(new BlockPos(pos), this.player.networkHandler.connection::send);
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
+            });
+
+            thread.setDaemon(true);
+            thread.start();
         }
     }
 
