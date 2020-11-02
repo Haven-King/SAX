@@ -22,6 +22,8 @@ public class SAX implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        Config.load();
+
         for (Map.Entry<Block, Block> entry : Config.HIDDEN.entrySet()) {
             FibLib.Blocks.register(new HideOccludedOre(entry.getKey(), entry.getValue()));
         }
