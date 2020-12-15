@@ -11,50 +11,58 @@ import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.RaycastContext;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import java.util.HashSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Consumer;
 
+import static dev.hephaestus.sax.server.Config.SEARCH_RADIUS;
+
 public class DeObfuscator {
-    private static final byte SEARCH_RADIUS = 30;
-
     private final ServerPlayerEntity player;
-    private final HashSet<Vec3i> revealed = new HashSet<>();
+    private final HashSet<BlockPos> revealed = new HashSet<>();
     private final BlockPos.Mutable mutable = new BlockPos.Mutable();
-
-    private Thread thread = null;
+    private final RaycastContext raycastContext;
+    private final ExecutorService executor;
+    private final MutableBoolean finished = new MutableBoolean(true);
 
     public DeObfuscator(ServerPlayerEntity player) {
         this.player = player;
+        this.raycastContext = new RaycastContext(
+                Vec3d.ZERO, Vec3d.ZERO, RaycastContext.ShapeType.VISUAL, RaycastContext.FluidHandling.NONE, player
+        );
+
+        executor = Executors.newSingleThreadExecutor((runnable) -> {
+            Thread thread = new Thread(runnable);
+            thread.setDaemon(true);
+            return thread;
+        });
     }
 
     public void tick() {
-        if (thread == null || !thread.isAlive()) {
-            thread = new Thread(() -> {
-                Vec3d origin = this.player.getCameraPosVec(1F);
-
-                for (Vec3i pos : this.revealed) {
-                    if (!pos.isWithinDistance(origin, SEARCH_RADIUS)) {
-                        this.sendBlockUpdate(new BlockPos(pos), this.player.networkHandler::sendPacket);
-                    }
-                }
+        if (finished.booleanValue()) {
+            executor.submit(() -> {
+                finished.setFalse();
+                Vec3d origin = this.raycastContext.start = this.player.getCameraPosVec(1F);
 
                 this.revealed.removeIf(pos -> !pos.isWithinDistance(origin, SEARCH_RADIUS));
 
-                for (byte x = -SEARCH_RADIUS; x <= SEARCH_RADIUS; ++x) {
-                    for (byte y = -SEARCH_RADIUS; y <= SEARCH_RADIUS; ++y) {
-                        for (byte z = -SEARCH_RADIUS; z <= SEARCH_RADIUS; ++z) {
+                for (byte x = (byte) -SEARCH_RADIUS; x <= SEARCH_RADIUS; ++x) {
+                    for (byte y = (byte) -SEARCH_RADIUS; y <= SEARCH_RADIUS; ++y) {
+                        for (byte z = (byte) -SEARCH_RADIUS; z <= SEARCH_RADIUS; ++z) {
                             if (x * x + y * y + z * z <= SEARCH_RADIUS * SEARCH_RADIUS) {
                                 mutable.set(origin.x, origin.y, origin.z);
                                 mutable.move(x, y, z);
 
                                 if (Config.HIDDEN.containsKey(this.player.world.getBlockState(mutable).getBlock())) {
-                                    Vec3i pos = mutable.toImmutable();
-
-                                    if (!this.revealed.contains(pos)) {
-                                        if (this.traceForBlock(this.player, pos)) {
+                                    if (!this.revealed.contains(mutable)) {
+                                        if (this.traceForBlock(origin, mutable)) {
+                                            BlockPos pos = mutable.toImmutable();
                                             this.revealed.add(pos);
-                                            this.sendBlockUpdate(new BlockPos(pos), this.player.networkHandler.connection::send);
+                                            this.sendBlockUpdate(pos, this.player.networkHandler.connection::send);
                                         }
                                     }
                                 }
@@ -62,10 +70,9 @@ public class DeObfuscator {
                         }
                     }
                 }
-            });
 
-            thread.setDaemon(true);
-            thread.start();
+                finished.setTrue();
+            });
         }
     }
 
@@ -75,22 +82,25 @@ public class DeObfuscator {
         }
     }
 
-    private boolean traceForBlock(ServerPlayerEntity player, Vec3i target) {
+    private boolean traceForBlock(Vec3d origin, Vec3i target) {
+        Vec3d pos = new Vec3d(origin.x, origin.y, origin.z);
+
         for (byte dX = 0; dX <= 1; ++dX) {
             for (byte dY = 0; dY <= 1; ++dY) {
                 for (byte dZ = 0; dZ <= 1; ++dZ) {
-                    Vec3d pos = new Vec3d(target.getX() + dX, target.getY() + dY, target.getZ() + dZ);
-                        RaycastContext context = new RaycastContext(
-                                player.getCameraPosVec(1F),
-                                pos,
-                                RaycastContext.ShapeType.VISUAL, RaycastContext.FluidHandling.NONE, player
-                        );
+                    // We want to avoid creating a ton of new vectors.
+                    pos.x = target.getX() + dX;
+                    pos.y = target.getY() + dY;
+                    pos.z = target.getZ() + dZ;
 
-                        BlockHitResult hitResult = rayTrace(context);
+                    // Also avoiding making new RaycastContext's.
+                    this.raycastContext.end = pos;
 
-                        if (hitResult.getPos().isInRange(pos, 0.5F)) {
-                            return true;
-                        }
+                    BlockHitResult hitResult = rayTrace(this.raycastContext);
+
+                    if (hitResult.getPos().isInRange(pos, 0.5F)) {
+                        return true;
+                    }
                 }
             }
         }
@@ -102,10 +112,10 @@ public class DeObfuscator {
         BlockView blockView = this.player.world;
         return BlockView.raycast(context, (rayTraceContext, blockPos) -> {
             BlockState blockState = blockView.getBlockState(blockPos);
-            Vec3d vec3d = rayTraceContext.getStart();
-            Vec3d vec3d2 = rayTraceContext.getEnd();
+            Vec3d start = rayTraceContext.getStart();
+            Vec3d end = rayTraceContext.getEnd();
             VoxelShape voxelShape = rayTraceContext.getBlockShape(blockState, blockView, blockPos);
-            return blockView.raycastBlock(vec3d, vec3d2, blockPos, voxelShape, blockState);
+            return blockView.raycastBlock(start, end, blockPos, voxelShape, blockState);
         }, (rayTraceContext) -> {
             Vec3d vec3d = rayTraceContext.getStart().subtract(rayTraceContext.getEnd());
             return BlockHitResult.createMissed(rayTraceContext.getEnd(), Direction.getFacing(vec3d.x, vec3d.y, vec3d.z), new BlockPos(rayTraceContext.getEnd()));

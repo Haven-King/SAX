@@ -1,0 +1,8 @@
+accessWidener	v1	named
+mutable     field net/minecraft/util/math/Vec3d x D
+mutable     field net/minecraft/util/math/Vec3d y D
+mutable     field net/minecraft/util/math/Vec3d z D
+mutable     field net/minecraft/world/RaycastContext end Lnet/minecraft/util/math/Vec3d;
+accessible  field net/minecraft/world/RaycastContext end Lnet/minecraft/util/math/Vec3d;
+mutable     field net/minecraft/world/RaycastContext start Lnet/minecraft/util/math/Vec3d;
+accessible  field net/minecraft/world/RaycastContext start Lnet/minecraft/util/math/Vec3d;

@@ -23,6 +23,8 @@ public class Config {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	public static final HashMap<Block, Block> HIDDEN = new HashMap<>();
 
+	public static byte SEARCH_RADIUS = 30;
+
 	static {
 		HIDDEN.put(Blocks.DIAMOND_ORE, Blocks.STONE);
 		HIDDEN.put(Blocks.IRON_ORE, Blocks.STONE);
@@ -32,35 +34,64 @@ public class Config {
 		HIDDEN.put(Blocks.LAPIS_ORE, Blocks.STONE);
 		HIDDEN.put(Blocks.MOSSY_COBBLESTONE, Blocks.STONE);
 		HIDDEN.put(Blocks.SPAWNER, Blocks.CAVE_AIR);
+		HIDDEN.put(Blocks.NETHER_GOLD_ORE, Blocks.NETHERRACK);
+		HIDDEN.put(Blocks.NETHER_QUARTZ_ORE, Blocks.NETHERRACK);
+		HIDDEN.put(Blocks.ANCIENT_DEBRIS, Blocks.NETHERRACK);
 	}
 
 	public static void load() {
 		Path configDir = FabricLoader.getInstance().getConfigDir().normalize().resolve("sax");
-		Path configFile = configDir.resolve("blocks.json");
+		loadOptions(configDir, configDir.resolve("options.json"));
+		loadBlocks(configDir, configDir.resolve("blocks.json"));
+	}
 
+	private static void loadOptions(Path dir, Path file) {
 		try {
-			if (!Files.exists(configFile)) {
-				Files.createDirectories(configDir);
+			if (!Files.exists(file)) {
+				Files.createDirectories(dir);
 
-				JsonObject jsonObject = new JsonObject();
+				JsonObject options = new JsonObject();
+
+				options.addProperty("search_radius", SEARCH_RADIUS);
+
+				Writer writer = Files.newBufferedWriter(file);
+				writer.write(GSON.toJson(options));
+				writer.close();
+			} else {
+				JsonObject options = JsonHelper.deserialize(Files.newBufferedReader(file));
+				SEARCH_RADIUS = options.get("search_radius").getAsByte();
+
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	private static void loadBlocks(Path dir, Path file) {
+		try {
+			if (!Files.exists(file)) {
+				Files.createDirectories(dir);
+
+				JsonObject blocks = new JsonObject();
 
 				for (Map.Entry<Block, Block> entry : HIDDEN.entrySet()) {
-					jsonObject.addProperty(
-						Registry.BLOCK.getId(entry.getKey()).toString(),
-						Registry.BLOCK.getId(entry.getValue()).toString()
+					blocks.addProperty(
+							Registry.BLOCK.getId(entry.getKey()).toString(),
+							Registry.BLOCK.getId(entry.getValue()).toString()
 					);
 				}
 
-				Writer writer = Files.newBufferedWriter(configFile);
-				writer.write(GSON.toJson(jsonObject));
+				Writer writer = Files.newBufferedWriter(file);
+				writer.write(GSON.toJson(blocks));
 				writer.close();
 			} else {
 				HIDDEN.clear();
 
-				for (Map.Entry<String, JsonElement> element : JsonHelper.deserialize(Files.newBufferedReader(configFile)).entrySet()) {
+				for (Map.Entry<String, JsonElement> element : JsonHelper.deserialize(Files.newBufferedReader(file)).entrySet()) {
 					HIDDEN.put(
-						Registry.BLOCK.get(new Identifier(element.getKey())),
-						Registry.BLOCK.get(new Identifier(element.getValue().getAsString()))
+							Registry.BLOCK.get(new Identifier(element.getKey())),
+							Registry.BLOCK.get(new Identifier(element.getValue().getAsString()))
 					);
 				}
 			}

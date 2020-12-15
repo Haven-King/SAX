@@ -17,6 +17,7 @@ repositories {
 }
 
 minecraft {
+    accessWidener "src/main/resources/sax.accesswidener"
 }
 
 dependencies {
