@@ -1,13 +1,14 @@
 package dev.hephaestus.sax.server;
 
+import dev.hephaestus.sax.util.ListView;
+import dev.hephaestus.sax.util.OreChunk;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.network.packet.s2c.play.BlockUpdateS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.Vec3i;
+import net.minecraft.util.math.*;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.RaycastContext;
@@ -23,8 +24,6 @@ import static dev.hephaestus.sax.server.Config.SEARCH_RADIUS;
 
 public class DeObfuscator {
     private final ServerPlayerEntity player;
-    private final HashSet<BlockPos> revealed = new HashSet<>();
-    private final BlockPos.Mutable mutable = new BlockPos.Mutable();
     private final RaycastContext raycastContext;
     private final ExecutorService executor;
     private final MutableBoolean finished = new MutableBoolean(true);
@@ -48,24 +47,22 @@ public class DeObfuscator {
                 finished.setFalse();
                 Vec3d origin = this.raycastContext.start = this.player.getCameraPosVec(1F);
 
-                this.revealed.removeIf(pos -> !pos.isWithinDistance(origin, SEARCH_RADIUS));
+                int chunkX = this.player.chunkX;
+                int chunkZ = this.player.chunkZ;
 
-                for (byte x = (byte) -SEARCH_RADIUS; x <= SEARCH_RADIUS; ++x) {
-                    for (byte y = (byte) -SEARCH_RADIUS; y <= SEARCH_RADIUS; ++y) {
-                        for (byte z = (byte) -SEARCH_RADIUS; z <= SEARCH_RADIUS; ++z) {
-                            if (x * x + y * y + z * z <= SEARCH_RADIUS * SEARCH_RADIUS) {
-                                mutable.set(origin.x, origin.y, origin.z);
-                                mutable.move(x, y, z);
+                ServerWorld world = this.player.getServerWorld();
 
-                                if (Config.HIDDEN.containsKey(this.player.world.getBlockState(mutable).getBlock())) {
-                                    if (!this.revealed.contains(mutable)) {
-                                        if (this.traceForBlock(origin, mutable)) {
-                                            BlockPos pos = mutable.toImmutable();
-                                            this.revealed.add(pos);
-                                            this.sendBlockUpdate(pos, this.player.networkHandler.connection::send);
-                                        }
-                                    }
-                                }
+                for (int x = chunkX - Config.CHUNK_RADIUS; x < chunkX + Config.CHUNK_RADIUS; ++x) {
+                    for (int z = chunkZ - Config.CHUNK_RADIUS; z < chunkZ  + Config.CHUNK_RADIUS; ++z) {
+                        OreChunk chunk = (OreChunk) world.getChunk(x, z);
+                        ListView<BlockPos> positions = chunk.sax_getObfuscatedBlocks();
+
+                        for (int i = 0; i < positions.size(); ++i) {
+                            BlockPos pos = positions.get(i);
+                            Block block = chunk.getBlock(pos);
+
+                            if (Config.HIDDEN.containsKey(block) && this.traceForBlock(origin, pos)) {
+                                this.sendBlockUpdate(pos, this.player.networkHandler.connection::send);
                             }
                         }
                     }

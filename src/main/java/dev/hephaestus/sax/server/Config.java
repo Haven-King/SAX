@@ -24,6 +24,7 @@ public class Config {
 	public static final HashMap<Block, Block> HIDDEN = new HashMap<>();
 
 	public static byte SEARCH_RADIUS = 30;
+	public static byte CHUNK_RADIUS = 4;
 
 	static {
 		HIDDEN.put(Blocks.DIAMOND_ORE, Blocks.STONE);
