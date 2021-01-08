@@ -28,6 +28,7 @@ public class Config {
 
 	static {
 		HIDDEN.put(Blocks.DIAMOND_ORE, Blocks.STONE);
+		HIDDEN.put(Blocks.EMERALD_ORE, Blocks.STONE);
 		HIDDEN.put(Blocks.IRON_ORE, Blocks.STONE);
 		HIDDEN.put(Blocks.GOLD_ORE, Blocks.STONE);
 		HIDDEN.put(Blocks.COAL_ORE, Blocks.STONE);

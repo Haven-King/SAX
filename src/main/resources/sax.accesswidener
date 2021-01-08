@@ -6,3 +6,4 @@ mutable     field net/minecraft/world/RaycastContext end Lnet/minecraft/util/mat
 accessible  field net/minecraft/world/RaycastContext end Lnet/minecraft/util/math/Vec3d;
 mutable     field net/minecraft/world/RaycastContext start Lnet/minecraft/util/math/Vec3d;
 accessible  field net/minecraft/world/RaycastContext start Lnet/minecraft/util/math/Vec3d;
+accessible class net/minecraft/server/world/ServerChunkManager$MainThreadExecutor

@@ -63,7 +63,7 @@ public abstract class ImplementOreChunk implements OreChunk {
 
         for (int i = 0; i < this.sections.length; ++i) {
             ChunkSection section = this.sections[i];
-            if (!section.isEmpty()) {
+            if (section != null && !section.isEmpty()) {
                 for (int x = 0; x < 16; ++x) {
                     for (int y = 0; y <16; ++y) {
                         for (int z = 0; z < 16; ++z) {
@@ -84,12 +84,12 @@ public abstract class ImplementOreChunk implements OreChunk {
     }
 
     @Override
-    public ListView<BlockPos> sax_getObfuscatedBlocks() {
-        return ListView.of(this.obscuredBlockList);
+    public List<BlockPos> sax_getObfuscatedBlocks() {
+        return this.obscuredBlockList;
     }
 
     @Override
-    public Block getBlock(BlockPos pos) {
+    public Block sax_getBlock(BlockPos pos) {
         return this.getBlockState(pos).getBlock();
     }
 }

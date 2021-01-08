@@ -3,7 +3,9 @@ package dev.hephaestus.sax;
 import dev.hephaestus.fiblib.FibLib;
 import dev.hephaestus.sax.block.HideOccludedOre;
 import dev.hephaestus.sax.server.Config;
+import dev.hephaestus.sax.util.Profiler;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.block.Block;
 import net.minecraft.util.Identifier;
 import org.apache.logging.log4j.LogManager;
@@ -27,5 +29,9 @@ public class SAX implements ModInitializer {
         for (Map.Entry<Block, Block> entry : Config.HIDDEN.entrySet()) {
             FibLib.Blocks.register(new HideOccludedOre(entry.getKey(), entry.getValue()));
         }
+
+        ServerLifecycleEvents.SERVER_STOPPING.register(minecraftServer -> {
+            Profiler.dump(LOG);
+        });
     }
 }
