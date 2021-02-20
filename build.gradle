@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '0.5-SNAPSHOT'
+    id 'fabric-loom' version '0.6-SNAPSHOT'
     id 'maven-publish'
 }
 
@@ -35,8 +35,8 @@ dependencies {
     modImplementation ("dev.hephaestus:FibLib:${project.fiblib_version}")
     include "dev.hephaestus:FibLib:${project.fiblib_version}"
 
-    modApi "me.jellysquid.mods:lithium:0.6.0-SNAPSHOT"
-    modApi "me.jellysquid.mods:lithium-api:0.6.0-SNAPSHOT"
+    modCompileOnly "me.jellysquid.mods:lithium:0.6.3-SNAPSHOT"
+    modCompileOnly "me.jellysquid.mods:lithium-api:0.6.3-SNAPSHOT"
 }
 
 processResources {

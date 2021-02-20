@@ -25,6 +25,9 @@ public class DeObfuscator {
     private final Vec3d startPos = new Vec3d(0, 0, 0);
     private final ThreadLocal<Vec3d> endPos = ThreadLocal.withInitial(() -> new Vec3d(0, 0, 0));
     private final Map<BlockPos, Boolean> revealed = new ConcurrentHashMap<>();
+    private final DeObfuscationSection[][] sections = new DeObfuscationSection[Config.CHUNK_RADIUS * 2 + 1][];
+
+    private ServerChunkManager chunkManager = null;
 
     public DeObfuscator(ServerPlayerEntity player) {
         this.player = player;
@@ -39,11 +42,20 @@ public class DeObfuscator {
                     thread.setDaemon(true);
                     return thread;
         });
+
+        for (int i = 0; i < Config.CHUNK_RADIUS * 2 + 1; ++i) {
+            this.sections[i] = new DeObfuscationSection[Config.CHUNK_RADIUS * 2 + 1];
+
+            for (int j = 0; j < Config.CHUNK_RADIUS * 2 + 1; ++j) {
+                this.sections[i][j] = new DeObfuscationSection();
+            }
+        }
     }
 
-
     public void tick() {
-        if (this.taskQueue.isEmpty()) {
+        if (this.player.isCreative()) {
+            this.revealed.clear();
+        } else if (this.taskQueue.isEmpty()) {
             this.action();
         }
     }
@@ -55,31 +67,15 @@ public class DeObfuscator {
         int chunkZ = this.player.chunkZ;
 
         ServerWorld world = this.player.getServerWorld();
-        ServerChunkManager chunkManager = world.getChunkManager();
+        this.chunkManager = world.getChunkManager();
 
-        for (int x = chunkX - Config.CHUNK_RADIUS; x < chunkX + Config.CHUNK_RADIUS; ++x) {
-            for (int z = chunkZ - Config.CHUNK_RADIUS; z < chunkZ + Config.CHUNK_RADIUS; ++z) {
-                int finalX = x, finalZ = z;
-                this.executor.execute(() -> {
-                    BlockView blockView = chunkManager.getChunk(finalX, finalZ);
+        int r = Config.CHUNK_RADIUS;
 
-                    if (!(blockView instanceof WorldChunk)) return;
-
-                    OreChunk oreChunkhunk = (OreChunk) blockView;
-
-                    Collection<BlockPos> positions = oreChunkhunk.sax_getObfuscatedBlocks();
-
-                    for (BlockPos pos : positions) {
-                        Block block = oreChunkhunk.getBlockState(pos).getBlock();
-
-
-                        if (Config.HIDDEN.containsKey(block)) {
-                            if (this.traceForBlock(pos)) {
-                                this.sendBlockUpdate(pos, this.player.networkHandler.connection::send);
-                            }
-                        }
-                    }
-                });
+        for (int x = chunkX - r; x <= chunkX + r; ++x) {
+            for (int z = chunkZ - r; z <= chunkZ + r; ++z) {
+                DeObfuscationSection section = this.sections[x - chunkX + r][z - chunkZ + r];
+                section.init(x, z);
+                this.executor.execute(section);
             }
         }
     }
@@ -117,5 +113,35 @@ public class DeObfuscator {
         to.x = from.x;
         to.y = from.y;
         to.z = from.z;
+    }
+
+    private class DeObfuscationSection implements Runnable {
+        private int x, z;
+
+        public void init(int x, int z) {
+            this.x = x;
+            this.z = z;
+        }
+
+        @Override
+        public void run() {
+            BlockView blockView = DeObfuscator.this.chunkManager.getChunk(this.x, this.z);
+
+            if (!(blockView instanceof WorldChunk)) return;
+
+            OreChunk oreChunk = (OreChunk) blockView;
+
+            Collection<BlockPos> positions = oreChunk.sax_getObfuscatedBlocks();
+
+            for (BlockPos pos : positions) {
+                Block block = oreChunk.getBlockState(pos).getBlock();
+
+                if (Config.HIDDEN.containsKey(block)) {
+                    if (DeObfuscator.this.traceForBlock(pos)) {
+                        DeObfuscator.this.sendBlockUpdate(pos, DeObfuscator.this.player.networkHandler.connection::send);
+                    }
+                }
+            }
+        }
     }
 }

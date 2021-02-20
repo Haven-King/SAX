@@ -1,7 +1,7 @@
 package dev.hephaestus.sax;
 
-import dev.hephaestus.fiblib.FibLib;
-import dev.hephaestus.sax.block.HideOccludedOre;
+import dev.hephaestus.fiblib.api.BlockFib;
+import dev.hephaestus.fiblib.api.BlockFibRegistry;
 import dev.hephaestus.sax.server.Config;
 import dev.hephaestus.sax.util.Profiler;
 import net.fabricmc.api.ModInitializer;
@@ -27,7 +27,11 @@ public class SAX implements ModInitializer {
         Config.load();
 
         for (Map.Entry<Block, Block> entry : Config.HIDDEN.entrySet()) {
-            FibLib.Blocks.register(new HideOccludedOre(entry.getKey(), entry.getValue()));
+            BlockFibRegistry.register(new BlockFib.Builder(entry.getKey(), entry.getValue())
+                    .withCondition(player -> !player.isCreative())
+                    .lenient()
+                    .build()
+            );
         }
 
         ServerLifecycleEvents.SERVER_STOPPING.register(minecraftServer -> {
