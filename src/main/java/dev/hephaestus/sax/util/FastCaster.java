@@ -2,20 +2,28 @@ package dev.hephaestus.sax.util;
 
 import dev.hephaestus.sax.mixin.VisionAccessor;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.Vec3i;
-import net.minecraft.world.BlockView;
+import net.minecraft.util.math.*;
+import net.minecraft.util.registry.RegistryKey;
+import net.minecraft.world.World;
+import net.minecraft.world.chunk.ChunkSection;
+import net.minecraft.world.chunk.WorldChunk;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class FastCaster {
+    private static final Map<RegistryKey<World>, Map<Integer, Map<Integer, WorldChunk>>> CHUNKS = new HashMap<>();
+
     private static final ThreadLocal<BlockPos.Mutable> MUTABLE = ThreadLocal.withInitial(BlockPos.Mutable::new);
 
     private FastCaster() {
     }
 
-    public static boolean fastcast(ServerWorld blockView, Vec3d startPos, Vec3d endPos, Vec3i target) {
+    public static boolean fastcast(ServerWorld world, Vec3d startPos, Vec3d endPos, Vec3i target) {
         if (startPos.equals(endPos)) {
             return true;
         } else {
@@ -47,12 +55,12 @@ public class FastCaster {
 
             BlockState blockState;
             while (dX <= 1D || dY <= 1D || dZ <= 1D) {
-                BlockView chunk = blockView.getChunkManager().getChunk(x >> 4, z >> 4);
+                WorldChunk chunk = getChunk(world, x >> 4, z >> 4);
 
                 if (chunk != null) {
-                    blockState = chunk.getBlockState(mut.set(x, y, z));
+                    blockState = getBlockState(chunk, mut.set(x, y, z));
 
-                    if (((VisionAccessor) blockState).getBlockVisionPredicate().test(blockState, blockView, mut)) {
+                    if (((VisionAccessor) blockState).getBlockVisionPredicate().test(blockState, world, mut)) {
                         break;
                     }
                 }
@@ -86,5 +94,42 @@ public class FastCaster {
 
             return Math.abs(x1 - x2) < distance && Math.abs(y1 - y2) < distance && Math.abs(z1 - z2) < distance;
         }
+    }
+
+    private static BlockState getBlockState(WorldChunk chunk, BlockPos pos) {
+        int x = pos.getX();
+        int y = pos.getY();
+        int z = pos.getZ();
+
+        ChunkSection[] sections = chunk.getSectionArray();
+
+        if (y >= 0 && y >> 4 < sections.length) {
+            ChunkSection chunkSection = sections[y >> 4];
+            if (!ChunkSection.isEmpty(chunkSection)) {
+                return chunkSection.getBlockState(x & 15, y & 15, z & 15);
+            }
+        }
+
+        return Blocks.AIR.getDefaultState();
+    }
+
+    private static @Nullable WorldChunk getChunk(ServerWorld world, int x, int z) {
+        return CHUNKS.getOrDefault(world.getRegistryKey(), Collections.emptyMap())
+                .getOrDefault(x, Collections.emptyMap())
+                .get(z);
+    }
+
+    public static void load(ServerWorld world, WorldChunk chunk) {
+        ChunkPos pos = chunk.getPos();
+        CHUNKS.computeIfAbsent(world.getRegistryKey(), key -> new HashMap<>())
+                .computeIfAbsent(pos.x, x -> new HashMap<>())
+                .putIfAbsent(pos.z, chunk);
+    }
+
+    public static void unload(ServerWorld world, WorldChunk chunk) {
+        ChunkPos pos = chunk.getPos();
+        CHUNKS.computeIfAbsent(world.getRegistryKey(), key -> new HashMap<>())
+                .computeIfAbsent(pos.x, x -> new HashMap<>())
+                .remove(pos.z);
     }
 }

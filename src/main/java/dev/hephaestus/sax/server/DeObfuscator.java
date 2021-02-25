@@ -25,14 +25,20 @@ public class DeObfuscator {
     private final Vec3d startPos = new Vec3d(0, 0, 0);
     private final ThreadLocal<Vec3d> endPos = ThreadLocal.withInitial(() -> new Vec3d(0, 0, 0));
     private final Map<BlockPos, Boolean> revealed = new ConcurrentHashMap<>();
-    private final DeObfuscationSection[][] sections = new DeObfuscationSection[Config.CHUNK_RADIUS * 2 + 1][];
+    private final int radius;
+    private final DeObfuscationSection[][] sections;
 
     private ServerChunkManager chunkManager = null;
 
     public DeObfuscator(ServerPlayerEntity player) {
         this.player = player;
 
-        int s = Config.CHUNK_RADIUS * Config.CHUNK_RADIUS;
+        this.radius = Config.CHUNK_RADIUS == -1
+                ? player.server.getPlayerManager().getViewDistance()
+                : Config.CHUNK_RADIUS;
+
+        int s = this.radius;
+        this.sections = new DeObfuscationSection[this.radius * 2 + 1][];
 
         this.executor = new ThreadPoolExecutor(s, s,
                 0, TimeUnit.MILLISECONDS,
@@ -43,10 +49,10 @@ public class DeObfuscator {
                     return thread;
         });
 
-        for (int i = 0; i < Config.CHUNK_RADIUS * 2 + 1; ++i) {
-            this.sections[i] = new DeObfuscationSection[Config.CHUNK_RADIUS * 2 + 1];
+        for (int i = 0; i < this.radius * 2 + 1; ++i) {
+            this.sections[i] = new DeObfuscationSection[this.radius * 2 + 1];
 
-            for (int j = 0; j < Config.CHUNK_RADIUS * 2 + 1; ++j) {
+            for (int j = 0; j < this.radius * 2 + 1; ++j) {
                 this.sections[i][j] = new DeObfuscationSection();
             }
         }
@@ -69,11 +75,9 @@ public class DeObfuscator {
         ServerWorld world = this.player.getServerWorld();
         this.chunkManager = world.getChunkManager();
 
-        int r = Config.CHUNK_RADIUS;
-
-        for (int x = chunkX - r; x <= chunkX + r; ++x) {
-            for (int z = chunkZ - r; z <= chunkZ + r; ++z) {
-                DeObfuscationSection section = this.sections[x - chunkX + r][z - chunkZ + r];
+        for (int x = chunkX - this.radius; x <= chunkX + this.radius; ++x) {
+            for (int z = chunkZ - this.radius; z <= chunkZ + this.radius; ++z) {
+                DeObfuscationSection section = this.sections[x - chunkX + this.radius][z - chunkZ + this.radius];
                 section.init(x, z);
                 this.executor.execute(section);
             }
@@ -90,6 +94,8 @@ public class DeObfuscator {
     private boolean traceForBlock(Vec3i target) {
         Vec3d pos = this.endPos.get();
 
+        ServerWorld world = this.player.getServerWorld();
+
         // We're checking all eight corners of our block
         for (byte dX = 0; dX <= 1; ++dX) {
             for (byte dY = 0; dY <= 1; ++dY) {
@@ -99,7 +105,7 @@ public class DeObfuscator {
                     pos.y = target.getY() + dY;
                     pos.z = target.getZ() + dZ;
 
-                    if (FastCaster.fastcast(this.player.getServerWorld(), this.startPos, pos, target)) {
+                    if (FastCaster.fastcast(world, this.startPos, pos, target)) {
                         return true;
                     }
                 }

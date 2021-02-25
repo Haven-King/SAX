@@ -3,8 +3,10 @@ package dev.hephaestus.sax;
 import dev.hephaestus.fiblib.api.BlockFib;
 import dev.hephaestus.fiblib.api.BlockFibRegistry;
 import dev.hephaestus.sax.server.Config;
+import dev.hephaestus.sax.util.FastCaster;
 import dev.hephaestus.sax.util.Profiler;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.block.Block;
 import net.minecraft.util.Identifier;
@@ -37,5 +39,8 @@ public class SAX implements ModInitializer {
         ServerLifecycleEvents.SERVER_STOPPING.register(minecraftServer -> {
             Profiler.dump(LOG);
         });
+
+        ServerChunkEvents.CHUNK_LOAD.register(FastCaster::load);
+        ServerChunkEvents.CHUNK_UNLOAD.register(FastCaster::unload);
     }
 }

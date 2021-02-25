@@ -23,8 +23,7 @@ public class Config {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	public static final HashMap<Block, Block> HIDDEN = new HashMap<>();
 
-	public static byte SEARCH_RADIUS = 30;
-	public static byte CHUNK_RADIUS = 4;
+	public static byte CHUNK_RADIUS = 8;
 
 	static {
 		HIDDEN.put(Blocks.DIAMOND_ORE, Blocks.STONE);
@@ -54,15 +53,17 @@ public class Config {
 
 				JsonObject options = new JsonObject();
 
-				options.addProperty("search_radius", SEARCH_RADIUS);
+				options.addProperty("chunk_radius", CHUNK_RADIUS);
 
 				Writer writer = Files.newBufferedWriter(file);
 				writer.write(GSON.toJson(options));
 				writer.close();
 			} else {
 				JsonObject options = JsonHelper.deserialize(Files.newBufferedReader(file));
-				SEARCH_RADIUS = options.get("search_radius").getAsByte();
 
+				if (options.has("chunk_radius")) {
+					CHUNK_RADIUS = options.get("chunk_radius").getAsByte();
+				}
 			}
 		} catch (IOException e) {
 			e.printStackTrace();

@@ -51,6 +51,9 @@ public abstract class ImplementOreChunk implements OreChunk {
         if (obscuredBlockSet.contains(pos) && !Config.HIDDEN.containsKey(state.getBlock())) {
             this.obscuredBlockList.remove(pos);
             this.obscuredBlockSet.remove(pos);
+        } else if (!obscuredBlockSet.contains(pos) && Config.HIDDEN.containsKey(state.getBlock())) {
+            this.obscuredBlockList.add(pos);
+            this.obscuredBlockSet.add(pos);
         }
     }
 
