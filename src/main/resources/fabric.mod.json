@@ -4,10 +4,14 @@
   "version": "${version}",
   "name": "Simple Anti X-Ray",
   "description": "A simple anti X-Ray mod for Fabric",
+  "contact": {
+    "issues": "https://github.com/Hephaestus-Dev/SAX/issues",
+    "sources": "https://github.com/Hephaestus-Dev/SAX"
+  },
   "authors": [
     "Haven King"
   ],
-  "license": "CC0-1.0",
+  "license": "Apache-2.0",
   "icon": "assets/sax/icon.png",
   "environment": "*",
   "entrypoints": {
