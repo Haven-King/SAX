@@ -1,7 +1,8 @@
-# SAX
-Is a simple Anti X-Ray which hides ores from the client.
-Here you can see a demonstration of SAX https://www.youtube.com/watch?v=fXhtN5GxmaI
+# Simple Anti X-Ray
+A simple Anti X-Ray which hides ores from the client.
+You can see a demonstration of SAX [here](https://www.youtube.com/watch?v=fXhtN5GxmaI)
 
 ## Download
-You can find a packed version under https://modrinth.com/mod/sax
-You have to install fabric-api which you find under https://modrinth.com/mod/fabric-api
+Builds are available on [Modrinth](https://modrinth.com/mod/sax) and [CurseForge](https://www.curseforge.com/minecraft/mc-mods/simple-anti-x-ray)
+
+SAX requires [Fabric API](https://modrinth.com/mod/fabric-api)
