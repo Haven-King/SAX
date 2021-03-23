@@ -1,4 +1,4 @@
-package dev.hephaestus.sax.mixin.world;
+package dev.hephaestus.sax.mixin;
 
 import dev.hephaestus.sax.server.Config;
 import dev.hephaestus.sax.util.ListView;
@@ -30,7 +30,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 @Mixin(WorldChunk.class)
-public abstract class ImplementOreChunk implements OreChunk {
+public abstract class MixinWorldChunk implements OreChunk {
     @Shadow @Final private ChunkSection[] sections;
     @Shadow @Final private ChunkPos pos;
 

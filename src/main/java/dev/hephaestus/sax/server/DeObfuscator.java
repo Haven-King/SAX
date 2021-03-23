@@ -61,9 +61,13 @@ public class DeObfuscator {
     public void tick() {
         if (this.player.isCreative()) {
             this.revealed.clear();
-        } else if (this.taskQueue.isEmpty()) {
+        } else if (this.taskQueue.isEmpty() && this.player.world.getTime() % Config.TICK_RATE == 0) {
             this.action();
         }
+    }
+
+    public void remove() {
+        this.executor.shutdown();
     }
 
     private void action() {
@@ -96,17 +100,25 @@ public class DeObfuscator {
 
         ServerWorld world = this.player.getServerWorld();
 
-        // We're checking all eight corners of our block
-        for (byte dX = 0; dX <= 1; ++dX) {
-            for (byte dY = 0; dY <= 1; ++dY) {
-                for (byte dZ = 0; dZ <= 1; ++dZ) {
-                    // We want to avoid creating a ton of new vectors.
-                    pos.x = target.getX() + dX;
-                    pos.y = target.getY() + dY;
-                    pos.z = target.getZ() + dZ;
+        if (Config.LENIENT) {
+            pos.x = target.getX() + 0.5;
+            pos.y = target.getY() + 0.5;
+            pos.z = target.getZ() + 0.5;
 
-                    if (FastCaster.fastcast(world, this.startPos, pos, target)) {
-                        return true;
+            return FastCaster.fastcast(world, this.startPos, pos, target) < 2;
+        } else {
+            // We're checking all eight corners of our block
+            for (byte dX = 0; dX <= 1; ++dX) {
+                for (byte dY = 0; dY <= 1; ++dY) {
+                    for (byte dZ = 0; dZ <= 1; ++dZ) {
+                        // We want to avoid creating a ton of new vectors.
+                        pos.x = target.getX() + dX;
+                        pos.y = target.getY() + dY;
+                        pos.z = target.getZ() + dZ;
+
+                        if (FastCaster.fastcast(world, this.startPos, pos, target) < 1) {
+                            return true;
+                        }
                     }
                 }
             }
@@ -140,11 +152,13 @@ public class DeObfuscator {
             Collection<BlockPos> positions = oreChunk.sax_getObfuscatedBlocks();
 
             for (BlockPos pos : positions) {
-                Block block = oreChunk.getBlockState(pos).getBlock();
+                if (!DeObfuscator.this.revealed.containsKey(pos)) {
+                    Block block = oreChunk.getBlockState(pos).getBlock();
 
-                if (Config.HIDDEN.containsKey(block)) {
-                    if (DeObfuscator.this.traceForBlock(pos)) {
-                        DeObfuscator.this.sendBlockUpdate(pos, DeObfuscator.this.player.networkHandler.connection::send);
+                    if (Config.HIDDEN.containsKey(block)) {
+                        if (DeObfuscator.this.traceForBlock(pos)) {
+                            DeObfuscator.this.sendBlockUpdate(pos, DeObfuscator.this.player.networkHandler.connection::send);
+                        }
                     }
                 }
             }

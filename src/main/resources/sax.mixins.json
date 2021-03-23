@@ -3,9 +3,9 @@
   "package": "dev.hephaestus.sax.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "VisionAccessor",
-    "server.DeObfuscateTargetedBlock",
-    "world.ImplementOreChunk"
+    "MixinServerWorld",
+    "MixinWorldChunk",
+    "VisionAccessor"
   ],
   "client": [
   ],

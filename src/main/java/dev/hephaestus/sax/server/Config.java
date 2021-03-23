@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.lib.gson.JsonReader;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.util.Identifier;
@@ -20,10 +21,15 @@ import java.util.Map;
 
 // Simple config for now
 public class Config {
-	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-	public static final HashMap<Block, Block> HIDDEN = new HashMap<>();
+	private static final Path OPTIONS = FabricLoader.getInstance().getConfigDir().resolve("sax").resolve("options.json");
+	private static final Path BLOCKS = FabricLoader.getInstance().getConfigDir().resolve("sax").resolve("blocks.json");
 
-	public static byte CHUNK_RADIUS = 8;
+	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+
+	public static final HashMap<Block, Block> HIDDEN = new HashMap<>();
+	public static byte CHUNK_RADIUS = 4;
+	public static boolean LENIENT = false;
+	public static int TICK_RATE = 10;
 
 	static {
 		HIDDEN.put(Blocks.DIAMOND_ORE, Blocks.STONE);
@@ -41,40 +47,58 @@ public class Config {
 	}
 
 	public static void load() {
-		Path configDir = FabricLoader.getInstance().getConfigDir().normalize().resolve("sax");
-		loadOptions(configDir, configDir.resolve("options.json"));
-		loadBlocks(configDir, configDir.resolve("blocks.json"));
+		loadOptions();
+		loadBlocks();
 	}
 
-	private static void loadOptions(Path dir, Path file) {
+	private static void loadOptions() {
 		try {
-			if (!Files.exists(file)) {
-				Files.createDirectories(dir);
-
-				JsonObject options = new JsonObject();
-
-				options.addProperty("chunk_radius", CHUNK_RADIUS);
-
-				Writer writer = Files.newBufferedWriter(file);
-				writer.write(GSON.toJson(options));
-				writer.close();
-			} else {
-				JsonObject options = JsonHelper.deserialize(Files.newBufferedReader(file));
+			if (Files.exists(Config.OPTIONS)) {
+				JsonObject options = JsonHelper.deserialize(Files.newBufferedReader(Config.OPTIONS));
 
 				if (options.has("chunk_radius")) {
 					CHUNK_RADIUS = options.get("chunk_radius").getAsByte();
 				}
+
+				if (options.has("lenient")) {
+					LENIENT = options.get("lenient").getAsBoolean();
+				}
+
+				if (options.has("tick_rate")) {
+					TICK_RATE = options.get("tick_rate").getAsInt();
+				}
 			}
+
+			save();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
 	}
 
-	private static void loadBlocks(Path dir, Path file) {
+	public static void save() {
 		try {
-			if (!Files.exists(file)) {
-				Files.createDirectories(dir);
+			if (!Files.exists(Config.OPTIONS.getParent())) {
+				Files.createDirectories(Config.OPTIONS.getParent());
+			}
+
+			JsonObject options = new JsonObject();
+
+			options.addProperty("chunk_radius", CHUNK_RADIUS);
+			options.addProperty("lenient", LENIENT);
+			options.addProperty("tick_rate", TICK_RATE);
+
+			Writer writer = Files.newBufferedWriter(Config.OPTIONS);
+			writer.write(GSON.toJson(options));
+			writer.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private static void loadBlocks() {
+		try {
+			if (!Files.exists(Config.BLOCKS)) {
+				Files.createDirectories(Config.BLOCKS.getParent());
 
 				JsonObject blocks = new JsonObject();
 
@@ -85,13 +109,13 @@ public class Config {
 					);
 				}
 
-				Writer writer = Files.newBufferedWriter(file);
+				Writer writer = Files.newBufferedWriter(Config.BLOCKS);
 				writer.write(GSON.toJson(blocks));
 				writer.close();
 			} else {
 				HIDDEN.clear();
 
-				for (Map.Entry<String, JsonElement> element : JsonHelper.deserialize(Files.newBufferedReader(file)).entrySet()) {
+				for (Map.Entry<String, JsonElement> element : JsonHelper.deserialize(Files.newBufferedReader(Config.BLOCKS)).entrySet()) {
 					HIDDEN.put(
 							Registry.BLOCK.get(new Identifier(element.getKey())),
 							Registry.BLOCK.get(new Identifier(element.getValue().getAsString()))

@@ -23,9 +23,9 @@ public class FastCaster {
     private FastCaster() {
     }
 
-    public static boolean fastcast(ServerWorld world, Vec3d startPos, Vec3d endPos, Vec3i target) {
+    public static double fastcast(ServerWorld world, Vec3d startPos, Vec3d endPos, Vec3i target) {
         if (startPos.equals(endPos)) {
-            return true;
+            return 0;
         } else {
             double startX = MathHelper.lerp(-1.0E-7D, endPos.x, startPos.x);
             double startY = MathHelper.lerp(-1.0E-7D, endPos.y, startPos.y);
@@ -90,9 +90,11 @@ public class FastCaster {
             double y2 = target.getY() + 0.5;
             double z2 = target.getZ() + 0.5;
 
-            double distance = 1;
+            dX = x1 - x2;
+            dY = y1 - y2;
+            dZ = z1 - z2;
 
-            return Math.abs(x1 - x2) < distance && Math.abs(y1 - y2) < distance && Math.abs(z1 - z2) < distance;
+            return Math.sqrt(dX * dX + dY * dY + dZ * dZ);
         }
     }
 
