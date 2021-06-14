@@ -73,8 +73,8 @@ public class DeObfuscator {
     private void action() {
         set(this.player.getCameraPosVec(1F), this.startPos);
 
-        int chunkX = this.player.chunkX;
-        int chunkZ = this.player.chunkZ;
+        int chunkX = this.player.getBlockX() >> 4;
+        int chunkZ = this.player.getBlockZ() >> 4;
 
         ServerWorld world = this.player.getServerWorld();
         this.chunkManager = world.getChunkManager();

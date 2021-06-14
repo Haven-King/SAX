@@ -20,7 +20,7 @@ import java.util.UUID;
 
 @Mixin(ServerWorld.class)
 public class MixinServerWorld implements ObfuscatedWorld {
-    @Shadow @Final private List<ServerPlayerEntity> players;
+    @Shadow @Final List<ServerPlayerEntity> players;
     @Unique private final Map<UUID, DeObfuscator> deObfuscatorMap = new HashMap<>();
 
     @Inject(method = "addPlayer", at = @At("TAIL"))
@@ -29,8 +29,12 @@ public class MixinServerWorld implements ObfuscatedWorld {
     }
 
     @Inject(method = "removePlayer", at = @At("TAIL"))
-    private void removeDeobfuscator(ServerPlayerEntity player, CallbackInfo ci) {
-        this.deObfuscatorMap.remove(player.getUuid()).remove();
+    private void removeDeobfuscator(ServerPlayerEntity player, Entity.RemovalReason reason, CallbackInfo ci) {
+        DeObfuscator deObfuscator = this.deObfuscatorMap.remove(player.getUuid());
+
+        if (deObfuscator != null) {
+            deObfuscator.remove();
+        }
     }
 
     @Inject(method = "tickEntity", at = @At("TAIL"))

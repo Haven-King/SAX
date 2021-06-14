@@ -2,21 +2,16 @@ package dev.hephaestus.sax;
 
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.suggestion.SuggestionProvider;
 import dev.hephaestus.fiblib.api.BlockFib;
 import dev.hephaestus.fiblib.api.BlockFibRegistry;
 import dev.hephaestus.sax.server.Config;
 import dev.hephaestus.sax.util.FastCaster;
 import dev.hephaestus.sax.util.ObfuscatedWorld;
-import dev.hephaestus.sax.util.Profiler;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.block.Block;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -27,7 +22,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 public class SAX implements ModInitializer {
     public static final String MODID = "sax";

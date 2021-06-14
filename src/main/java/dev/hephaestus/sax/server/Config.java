@@ -5,7 +5,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.loader.lib.gson.JsonReader;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.util.Identifier;
@@ -16,7 +15,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 // Simple config for now
@@ -26,24 +25,36 @@ public class Config {
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-	public static final HashMap<Block, Block> HIDDEN = new HashMap<>();
+	public static final Map<Block, Block> HIDDEN = new LinkedHashMap<>();
 	public static byte CHUNK_RADIUS = 4;
 	public static boolean LENIENT = false;
 	public static int TICK_RATE = 10;
 
 	static {
+		HIDDEN.put(Blocks.COAL_ORE, Blocks.STONE);
+		HIDDEN.put(Blocks.IRON_ORE, Blocks.STONE);
+		HIDDEN.put(Blocks.COPPER_ORE, Blocks.STONE);
+		HIDDEN.put(Blocks.GOLD_ORE, Blocks.STONE);
 		HIDDEN.put(Blocks.DIAMOND_ORE, Blocks.STONE);
 		HIDDEN.put(Blocks.EMERALD_ORE, Blocks.STONE);
-		HIDDEN.put(Blocks.IRON_ORE, Blocks.STONE);
-		HIDDEN.put(Blocks.GOLD_ORE, Blocks.STONE);
-		HIDDEN.put(Blocks.COAL_ORE, Blocks.STONE);
 		HIDDEN.put(Blocks.REDSTONE_ORE, Blocks.STONE);
 		HIDDEN.put(Blocks.LAPIS_ORE, Blocks.STONE);
-		HIDDEN.put(Blocks.MOSSY_COBBLESTONE, Blocks.STONE);
-		HIDDEN.put(Blocks.SPAWNER, Blocks.CAVE_AIR);
+
+		HIDDEN.put(Blocks.DEEPSLATE_COAL_ORE, Blocks.DEEPSLATE);
+		HIDDEN.put(Blocks.DEEPSLATE_IRON_ORE, Blocks.DEEPSLATE);
+		HIDDEN.put(Blocks.DEEPSLATE_COPPER_ORE, Blocks.DEEPSLATE);
+		HIDDEN.put(Blocks.DEEPSLATE_GOLD_ORE, Blocks.DEEPSLATE);
+		HIDDEN.put(Blocks.DEEPSLATE_DIAMOND_ORE, Blocks.DEEPSLATE);
+		HIDDEN.put(Blocks.DEEPSLATE_EMERALD_ORE, Blocks.DEEPSLATE);
+		HIDDEN.put(Blocks.DEEPSLATE_REDSTONE_ORE, Blocks.DEEPSLATE);
+		HIDDEN.put(Blocks.DEEPSLATE_LAPIS_ORE, Blocks.DEEPSLATE);
+
 		HIDDEN.put(Blocks.NETHER_GOLD_ORE, Blocks.NETHERRACK);
 		HIDDEN.put(Blocks.NETHER_QUARTZ_ORE, Blocks.NETHERRACK);
 		HIDDEN.put(Blocks.ANCIENT_DEBRIS, Blocks.NETHERRACK);
+
+		HIDDEN.put(Blocks.MOSSY_COBBLESTONE, Blocks.STONE);
+		HIDDEN.put(Blocks.SPAWNER, Blocks.CAVE_AIR);
 	}
 
 	public static void load() {
